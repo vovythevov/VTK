@@ -514,17 +514,32 @@ void vtkLookupTable::SetTable(vtkUnsignedCharArray *table)
 }
 
 //----------------------------------------------------------------------------
-unsigned char* vtkLookupTable::GetNanColorAsUnsignedChars()
+// Cast a double color in a type T color. colorIn and colorOut are expected
+// to be RGBA]4] and colorIn to be in [0.0, 1.0]
+unsigned char* GetColorAsUnsignedChars(const double* colorIn,
+                                       unsigned char* colorOut)
 {
-  const double* nanColord = this->GetNanColor();
+  if (!colorIn || !colorOut)
+    {
+    return NULL;
+    }
+
   for ( int c = 0; c < 4; ++ c )
     {
-    double v = nanColord[c];
+    double v = colorIn[c];
     if (v < 0.0) { v = 0.0; }
     else if (v > 1.0) { v = 1.0; }
-    this->NanColorChar[c] = static_cast<unsigned char>( v * 255.0 + 0.5 );
+    colorOut[c] = static_cast<unsigned char>( v * 255.0 + 0.5 );
     }
-  return this->NanColorChar;
+
+  return colorOut;
+}
+
+//----------------------------------------------------------------------------
+unsigned char* vtkLookupTable::GetNanColorAsUnsignedChars()
+{
+  return GetColorAsUnsignedChars(
+    this->GetNanColor(), this->NanColorChar);
 }
 
 //----------------------------------------------------------------------------
@@ -550,14 +565,7 @@ void vtkLookupTableMapData(vtkLookupTable *self, T *input,
   double alpha;
 
   unsigned char nanColor[4];
-  const double *nanColord = self->GetNanColor();
-  for (int c = 0; c < 4; c++)
-    {
-    double v = nanColord[c];
-    if (v < 0.0) { v = 0.0; }
-    else if (v > 1.0) { v = 1.0; }
-    nanColor[c] = static_cast<unsigned char>(v*255.0 + 0.5);
-    }
+  GetColorAsUnsignedChars(self->GetNanColor(), nanColor);
 
   if ( (alpha=self->GetAlpha()) >= 1.0 ) //no blending required
     {
@@ -842,11 +850,7 @@ void vtkLookupTableIndexedMapData(
   double alpha;
 
   unsigned char nanColor[4];
-  const unsigned char* nanColorTmp = self->GetNanColorAsUnsignedChars();
-  for (int c = 0; c < 4; c++)
-    {
-    nanColor[c] = nanColorTmp[c];
-    }
+  GetColorAsUnsignedChars(self->GetNanColor(), nanColor);
 
   vtkVariant vin;
   if ( (alpha=self->GetAlpha()) >= 1.0 ) //no blending required
@@ -1201,6 +1205,11 @@ void vtkLookupTable::DeepCopy(vtkScalarsToColors *obj)
   this->Ramp                = lut->Ramp;
   this->InsertTime          = lut->InsertTime;
   this->BuildTime           = lut->BuildTime;
+
+  for (int i = 0; i < 4; ++i)
+    {
+    this->NanColor[i] = lut->NanColor[i];
+    }
   this->Table->DeepCopy(lut->Table);
 
   this->Superclass::DeepCopy(obj);
