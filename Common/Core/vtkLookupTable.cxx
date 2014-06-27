@@ -369,11 +369,10 @@ inline double vtkApplyLogScale(double v, const double range[2],
 }
 
 //----------------------------------------------------------------------------
-// Apply shift/scale to the scalar value v and do table lookup.
-inline unsigned char *vtkLinearLookupMain(double v,
-                                          unsigned char *table,
-                                          double maxIndex,
-                                          double shift, double scale)
+// Apply shift/scale to the scalar value v and return the index.
+inline unsigned int vtkLinearIndexLookupMain(double v,
+                                             double maxIndex,
+                                             double shift, double scale)
 {
   double findx = (v + shift)*scale;
 
@@ -381,9 +380,21 @@ inline unsigned char *vtkLinearLookupMain(double v,
   findx = (findx > 0 ? findx : 0);
   findx = (findx < maxIndex ? findx : maxIndex);
 
-  return &table[4*static_cast<unsigned int>(findx)];
+  return static_cast<unsigned int>(findx);
 }
 
+//----------------------------------------------------------------------------
+// Get index and do the table lookup.
+inline unsigned char *vtkLinearLookupMain(double v,
+                                          unsigned char *table,
+                                          double maxIndex,
+                                          double shift, double scale)
+{
+  unsigned int indx = vtkLinearIndexLookupMain(v, maxIndex, shift, scale);
+  return &table[4*indx];
+}
+
+//----------------------------------------------------------------------------
 template<class T>
 unsigned char *vtkLinearLookup(
   T v, unsigned char *table, double maxIndex, double shift, double scale,
@@ -406,6 +417,7 @@ inline unsigned char *vtkLinearLookup(
   return vtkLinearLookupMain(v, table, maxIndex, shift, scale);
 }
 
+//----------------------------------------------------------------------------
 inline unsigned char *vtkLinearLookup(
   float v, unsigned char *table, double maxIndex, double shift, double scale,
   unsigned char *nanColor)
@@ -473,17 +485,8 @@ vtkIdType vtkLookupTable::GetIndex(double v)
     {
     return -1;
     }
-  //  Now we know we have a valid number; find out where it lies:
-  double findx = (v + shift)*scale;
-  if (findx < 0)
-    {
-    findx = 0;
-    }
-  if (findx > maxIndex)
-    {
-    findx = maxIndex;
-    }
-  return static_cast<int>(findx);
+
+  return vtkLinearIndexLookupMain(v, maxIndex, shift, scale);
 }
 
 //----------------------------------------------------------------------------
