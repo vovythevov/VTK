@@ -440,6 +440,22 @@ double vtkLookupTable::ApplyLogScale(double v, const double range[2],
 }
 
 //----------------------------------------------------------------------------
+inline void vtkLookupShiftAndScale(double range[2],
+                                   double maxIndex,
+                                   double& shift, double& scale)
+{
+  shift = -range[0];
+  if (range[1] <= range[0])
+    {
+    scale = VTK_DOUBLE_MAX;
+    }
+  else
+    {
+    scale = (maxIndex + 1)/(range[1] - range[0]);
+    }
+}
+
+//----------------------------------------------------------------------------
 // Given a scalar value v, return an index into the lookup table
 vtkIdType vtkLookupTable::GetIndex(double v)
 {
@@ -455,28 +471,12 @@ vtkIdType vtkLookupTable::GetIndex(double v)
     {   // handle logarithmic scale
     double logRange[2];
     vtkLookupTableLogRange(this->TableRange, logRange);
-    shift = -logRange[0];
-    if (logRange[1] <= logRange[0])
-      {
-      scale = VTK_DOUBLE_MAX;
-      }
-    else
-      {
-      scale = (maxIndex + 1)/(logRange[1] - logRange[0]);
-      }
+    vtkLookupShiftAndScale(logRange, maxIndex, shift, scale);
     v = vtkApplyLogScale(v, this->TableRange, logRange);
     }
   else
     {   // plain old linear
-    shift = -this->TableRange[0];
-    if (this->TableRange[1] <= this->TableRange[0])
-      {
-      scale = VTK_DOUBLE_MAX;
-      }
-    else
-      {
-      scale = (maxIndex + 1)/(this->TableRange[1] - this->TableRange[0]);
-      }
+    vtkLookupShiftAndScale(this->TableRange, maxIndex, shift, scale);
     }
 
   // Map to an index:
@@ -577,15 +577,7 @@ void vtkLookupTableMapData(vtkLookupTable *self, T *input,
       double val;
       double logRange[2];
       vtkLookupTableLogRange(range, logRange);
-      shift = -logRange[0];
-      if (logRange[1] <= logRange[0])
-        {
-        scale = VTK_DOUBLE_MAX;
-        }
-      else
-        {
-        scale = (maxIndex + 1)/(logRange[1] - logRange[0]);
-        }
+      vtkLookupShiftAndScale(logRange, maxIndex, shift, scale);
       if (outFormat == VTK_RGBA)
         {
         while (--i >= 0)
@@ -641,16 +633,7 @@ void vtkLookupTableMapData(vtkLookupTable *self, T *input,
 
     else //not log scale
       {
-      shift = -range[0];
-      if (range[1] <= range[0])
-        {
-        scale = VTK_DOUBLE_MAX;
-        }
-      else
-        {
-        scale = (maxIndex + 1)/(range[1] - range[0]);
-        }
-
+      vtkLookupShiftAndScale(range, maxIndex, shift, scale);
       if (outFormat == VTK_RGBA)
         {
         while (--i >= 0)
@@ -712,15 +695,7 @@ void vtkLookupTableMapData(vtkLookupTable *self, T *input,
       double val;
       double logRange[2];
       vtkLookupTableLogRange(range, logRange);
-      shift = -logRange[0];
-      if (logRange[1] <= logRange[0])
-        {
-        scale = VTK_DOUBLE_MAX;
-        }
-      else
-        {
-        scale = (maxIndex + 1)/(logRange[1] - logRange[0]);
-        }
+      vtkLookupShiftAndScale(logRange, maxIndex, shift, scale);
       if (outFormat == VTK_RGBA)
         {
         while (--i >= 0)
@@ -776,16 +751,7 @@ void vtkLookupTableMapData(vtkLookupTable *self, T *input,
 
     else //no log scale with blending
       {
-      shift = -range[0];
-      if (range[1] <= range[0])
-        {
-        scale = VTK_DOUBLE_MAX;
-        }
-      else
-        {
-        scale = (maxIndex + 1)/(range[1] - range[0]);
-        }
-
+      vtkLookupShiftAndScale(range, maxIndex, shift, scale);
       if (outFormat == VTK_RGBA)
         {
         while (--i >= 0)
