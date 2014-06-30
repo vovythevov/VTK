@@ -161,6 +161,11 @@ public:
   vtkGetMacro( Clamping, int);
 
   // Description:
+  // Helper methods to mirror vtkLookupTable API.
+  bool GetUseMinimumColor();
+  bool GetUseMaximumColor();
+
+  // Description:
   // Set/Get the color space used for interpolation: RGB, HSV, CIELAB, or
   // Diverging.  In HSV mode, if HSVWrap is on, it will take the shortest path
   // in Hue (going back through 0 if that is the shortest way around the hue

@@ -1171,6 +1171,18 @@ void vtkColorTransferFunction::BuildFunctionFromTable(double xStart,
 }
 
 //----------------------------------------------------------------------------
+bool vtkColorTransferFunction::GetUseMinimumColor()
+{
+  return static_cast<bool>(this->Clamping & UseMinimumColor);
+}
+
+//----------------------------------------------------------------------------
+bool vtkColorTransferFunction::GetUseMaximumColor()
+{
+  return static_cast<bool>(this->Clamping & UseMinimumColor);
+}
+
+//----------------------------------------------------------------------------
 // For a specified index value, get the node parameters
 int vtkColorTransferFunction::GetNodeValue( int index, double val[6] )
 {

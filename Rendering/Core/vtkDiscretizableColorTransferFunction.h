@@ -159,6 +159,10 @@ public:
   // Overridden to pass the alpha to the internal vtkLookupTable.
   virtual void SetAlpha(double alpha);
 
+  // Description:
+  // Overridden to set the \a UseMaximumColor and\or the \a UseMinimumColor
+  // to the internal vtkLookupTable.
+  virtual void SetClamping(int clamping);
 
   // Description:
   // Set the color to use when a NaN (not a number) is encountered.  This is an
@@ -169,6 +173,19 @@ public:
     this->SetNanColor(rgb[0], rgb[1], rgb[2]);
   }
 
+  // Description:
+  // Set the color to use when a when clamping with respectively the option
+  // \a UseMinimumColor and/or \a UseMaximumColor0. This is an RGB 3-tuple
+  // color of doubles in the range [0,1].
+  // Overridden to pass the color to the internal vtkLookupTable.
+  virtual void SetMinimumColor(double r, double g, double b);
+  virtual void SetMinimumColor(double rgb[3]) {
+    this->SetMinimumColor(rgb[0], rgb[1], rgb[2]);
+  }
+  virtual void SetMaximumColor(double r, double g, double b);
+  virtual void SetMaximumColor(double rgb[3]) {
+    this->SetMaximumColor(rgb[0], rgb[1], rgb[2]);
+  }
 
   // Description:
   // This should return 1 is the subclass is using log scale for mapping scalars

@@ -276,11 +276,35 @@ void vtkDiscretizableColorTransferFunction::SetAlpha(double alpha)
 }
 
 //-----------------------------------------------------------------------------
+void vtkDiscretizableColorTransferFunction::SetClamping(int clamping)
+{
+  this->LookupTable->SetUseMinimumColor(this->GetUseMinimumColor());
+  this->LookupTable->SetUseMaximumColor(this->GetUseMaximumColor());
+  this->Superclass::SetClamping(clamping);
+}
+
+//-----------------------------------------------------------------------------
 void vtkDiscretizableColorTransferFunction::SetNanColor(
                                                    double r, double g, double b)
 {
   this->LookupTable->SetNanColor(r, g, b, 1.0);
   this->Superclass::SetNanColor(r, g, b);
+}
+
+//-----------------------------------------------------------------------------
+void vtkDiscretizableColorTransferFunction
+::SetMinimumColor(double r, double g, double b)
+{
+  this->LookupTable->SetMinimumColor(r, g, b, 1.0);
+  this->Superclass::SetMinimumColor(r, g, b);
+}
+
+//-----------------------------------------------------------------------------
+void vtkDiscretizableColorTransferFunction
+::SetMaximumColor(double r, double g, double b)
+{
+  this->LookupTable->SetMaximumColor(r, g, b, 1.0);
+  this->Superclass::SetMaximumColor(r, g, b);
 }
 
 //-----------------------------------------------------------------------------
