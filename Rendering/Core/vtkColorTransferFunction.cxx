@@ -231,7 +231,7 @@ vtkColorTransferFunction::vtkColorTransferFunction()
   this->Range[0] = 0;
   this->Range[1] = 0;
 
-  this->Clamping = 1;
+  this->Clamping = vtkColorTransferFunction::Extreme;
   this->ColorSpace = VTK_CTF_RGB;
   this->HSVWrap = 1; //By default HSV will be wrap
 
@@ -240,6 +240,14 @@ vtkColorTransferFunction::vtkColorTransferFunction()
   this->NanColor[0] = 0.5;
   this->NanColor[1] = 0.0;
   this->NanColor[2] = 0.0;
+
+  this->MinimumColor[0] = 0.0;
+  this->MinimumColor[1] = 0.5;
+  this->MinimumColor[2] = 0.0;
+
+  this->MaximumColor[0] = 0.0;
+  this->MaximumColor[1] = 0.0;
+  this->MaximumColor[2] = 0.5;
 
   this->Function = NULL;
 
@@ -815,16 +823,16 @@ void vtkColorTransferFunction::GetTable( double xStart, double xEnd,
     // Are we at the end? If so, just use the last value
     if ( idx >= numNodes )
       {
-      tptr[0] = (this->Clamping)?(lastR):(0.0);
-      tptr[1] = (this->Clamping)?(lastG):(0.0);
-      tptr[2] = (this->Clamping)?(lastB):(0.0);
+      this->ClampColor(lastR, lastG, lastB, tptr, false);
       }
     // Are we before the first node? If so, duplicate this nodes values
     else if ( idx == 0 )
       {
-      tptr[0] = (this->Clamping)?(this->Internal->Nodes[0]->R):(0.0);
-      tptr[1] = (this->Clamping)?(this->Internal->Nodes[0]->G):(0.0);
-      tptr[2] = (this->Clamping)?(this->Internal->Nodes[0]->B):(0.0);
+      this->ClampColor(
+        this->Internal->Nodes[0]->R,
+        this->Internal->Nodes[0]->G,
+        this->Internal->Nodes[0]->B,
+        tptr, true);
       }
     // Otherwise, we are between two nodes - interpolate
     else
@@ -1774,20 +1782,39 @@ int vtkColorTransferFunction::AdjustRange(double range[2])
 }
 
 //----------------------------------------------------------------------------
+void vtkColorTransferFunction
+::ClampColor(double x, double y, double z, double* res, bool isMin)
+{
+  if (this->Clamping & vtkColorTransferFunction::UseMinimumColor && isMin)
+    {
+    this->GetMinimumColor(res);
+    }
+  else if (this->Clamping & vtkColorTransferFunction::UseMaximumColor && !isMin)
+    {
+    this->GetMaximumColor(res);
+    }
+  else if (this->Clamping & vtkColorTransferFunction::Extreme)
+    {
+    res[0] = x;
+    res[1] = y;
+    res[2] = z;
+    }
+  else
+    {
+    res[0] = 0.0;
+    res[1] = 0.0;
+    res[2] = 0.0;
+    }
+}
+
+//----------------------------------------------------------------------------
 // Print method for vtkColorTransferFunction
 void vtkColorTransferFunction::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Size: " << this->Internal->Nodes.size() << endl;
-  if ( this->Clamping )
-    {
-    os << indent << "Clamping: On\n";
-    }
-  else
-    {
-    os << indent << "Clamping: Off\n";
-    }
+  os << indent << "Clamping: " << this->Clamping << endl;
 
   if ( this->ColorSpace == VTK_CTF_RGB )
     {

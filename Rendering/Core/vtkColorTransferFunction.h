@@ -135,10 +135,30 @@ public:
   void BuildFunctionFromTable( double x1, double x2, int size, double *table);
 
   // Description:
+  // Determines the function value outside of defined points. The \a Zero and
+  // the \a Extreme flag are opposite. If only one of the color flag is
+  // set (for example only \a MinimumColor), the behavior for the other
+  // boundary will either be be \a Zero or \a Extreme.
+  // Default behavior is \a Zero.
+  // Zero         = always return 0.0 outside of defined points
+  //               (opposite of \a Extremes)
+  // Extreme      = clamp to the lowest value below defined points and
+  //                highest value above defined points (opposite of \a Zero).
+  // MinimumColor = use minimum colors
+  // MaximumColor = use maximum colors
+  enum ClamplingFlags
+    {
+    Zero = 0x00,
+    Extreme = 0x01,
+    UseMinimumColor = 0x02,
+    UseMaximumColor = 0x04,
+    UseMinimumAndMaximumColor = UseMinimumColor | UseMaximumColor,
+    };
+
+  // Description:
   // Sets and gets the clamping value for this transfer function.
-  vtkSetClampMacro( Clamping, int, 0, 1 );
-  vtkGetMacro( Clamping, int );
-  vtkBooleanMacro( Clamping, int );
+  vtkSetClampMacro( Clamping, int, 0, 7);
+  vtkGetMacro( Clamping, int);
 
   // Description:
   // Set/Get the color space used for interpolation: RGB, HSV, CIELAB, or
@@ -172,6 +192,15 @@ public:
   // RGB 3-tuple color of doubles in the range [0,1].
   vtkSetVector3Macro(NanColor, double);
   vtkGetVector3Macro(NanColor, double);
+
+  // Description:
+  // Set the color to use when a when clamping with respectively the option
+  // \a UseMinimumColor and/or \a UseMaximumColor0. This is an RGB 3-tuple
+  // color of doubles in the range [0,1].
+  vtkSetVector3Macro(MinimumColor, double);
+  vtkGetVector3Macro(MinimumColor, double);
+  vtkSetVector3Macro(MaximumColor, double);
+  vtkGetVector3Macro(MaximumColor, double);
 
   // Description:
   // Returns a list of all nodes
@@ -209,10 +238,7 @@ protected:
 
   vtkColorTransferFunctionInternals *Internal;
 
-  // Determines the function value outside of defined points
-  // Zero = always return 0.0 outside of defined points
-  // One  = clamp to the lowest value below defined points and
-  //        highest value above defined points
+  // Clamping parameter value
   int Clamping;
 
   // The color space in which interpolation is performed
@@ -226,6 +252,10 @@ protected:
 
   // The color to use for not-a-number.
   double NanColor[3];
+
+  // Minimum and maximum colors
+  double MinimumColor[3];
+  double MaximumColor[3];
 
   double     *Function;
 
@@ -258,6 +288,10 @@ protected:
   // Moves point from oldX to newX. It removed the point from oldX. If any point
   // existed at newX, it will also be removed.
   void MovePoint(double oldX, double newX);
+
+  // Internal method that returns a color given the clamping parameter and the
+  // extreme value. NO check on the pointers !
+  void ClampColor(double x, double y, double z, double* res, bool isMin);
 
 private:
   vtkColorTransferFunction(const vtkColorTransferFunction&);  // Not implemented.
