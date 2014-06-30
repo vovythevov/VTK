@@ -33,6 +33,11 @@
 // determine the color. If a scalar value is not present in \a AnnotatedValues,
 // then \a NanColor will be used.
 //
+// A \a MinimumColor and a \a MaximumColor can be used (respectively with
+// \a UseMinimumColor and \a UseMaximumColor) when returning colors from
+// out-of-range values. Note that when using \a MaximumColor, the values will
+// be mapped in the given \a table range [min, max[ (max excluded).
+//
 // .SECTION Caveats
 // You need to explicitly call Build() when constructing the LUT by hand.
 //
@@ -151,8 +156,39 @@ public:
   vtkGetVector4Macro(NanColor, double);
 
   // Description:
-  // Return the \a NanColor as a pointer to 4 unsigned chars. This will overwrite any data returned by previous calls to MapValue.
+  // Set the color associated with the out-of-range values.
+  // RGBA 4-tuple color of doubles in the range [0,1].
+  vtkSetVector4Macro(MinimumColor, double);
+  vtkGetVector4Macro(MinimumColor, double);
+  vtkSetVector4Macro(MaximumColor, double);
+  vtkGetVector4Macro(MaximumColor, double);
+
+  // Description:
+  // Set whether the \a MinimumColor and the \a MaximumColor will be used
+  // .Note that when using \a MaximumColor, the values will be mapped in the
+  // given \a table range [min, max[ (max excluded).
+  vtkSetMacro(UseMinimumColor, bool);
+  vtkGetMacro(UseMinimumColor, bool);
+  vtkBooleanMacro(UseMinimumColor, bool);
+  vtkSetMacro(UseMaximumColor, bool);
+  vtkGetMacro(UseMaximumColor, bool);
+  vtkBooleanMacro(UseMaximumColor, bool);
+
+  // Description:
+  // Helper method to set \a UseMinimumColor and \a UseMaximumColor at the same
+  // time.
+  void SetUseRangeColors(bool use)
+    {
+    this->SetUseMinimumColor(use);
+    this->SetUseMaximumColor(use);
+    }
+
+  // Description:
+  // Return the color as a pointer to 4 unsigned chars.
+  // This will overwrite any data returned by previous calls to MapValue.
   unsigned char* GetNanColorAsUnsignedChars();
+  unsigned char* GetMinimumColorAsUnsignedChars();
+  unsigned char* GetMaximumColorAsUnsignedChars();
 
   // Description:
   // Map one value through the lookup table.
@@ -175,6 +211,9 @@ public:
   // in that case, the set of values \a v may take on is exactly the integers
   // from 0 to \a GetNumberOfTableValues() - 1;
   // and \a v serves directly as an index into \a TableValues.
+  //
+  // If the \a UseMinimumColor and/or \a UseMaximumColor is true, the index
+  // value may be outside the [0, \a GetNumberOfTableValues() - 1] range.
   virtual vtkIdType GetIndex(double v);
 
   // Description:
@@ -296,12 +335,18 @@ protected:
   double ValueRange[2];
   double AlphaRange[2];
   double NanColor[4];
+  double MinimumColor[4];
+  bool UseMinimumColor;
+  double MaximumColor[4];
+  bool UseMaximumColor;
   int Scale;
   int Ramp;
   vtkTimeStamp InsertTime;
   vtkTimeStamp BuildTime;
   double RGBA[4]; //used during conversion process
   unsigned char NanColorChar[4];
+  unsigned char MinimumColorChar[4];
+  unsigned char MaximumColorChar[4];
 
   int OpaqueFlag;
   vtkTimeStamp OpaqueFlagBuildTime;

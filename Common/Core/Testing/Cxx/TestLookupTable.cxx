@@ -16,6 +16,7 @@
 
 #include "vtkLookupTable.h"
 #include "vtkMath.h"
+#include "vtkMathUtilities.h"
 #include "vtkCommand.h"
 #include "vtkSmartPointer.h"
 
@@ -27,6 +28,13 @@ if (!(t)) \
   cerr << " Test assertion failed line " << __LINE__ << ": " << #t << "\n"; \
   rval |= 1; \
 }
+
+#define TestVector4(t1, a, b, c, d) \
+  TestAssert( \
+  vtkMathUtilities::FuzzyCompare<double>(t1[0], a) \
+  && vtkMathUtilities::FuzzyCompare<double>(t1[1], b) \
+  && vtkMathUtilities::FuzzyCompare<double>(t1[2], c) \
+  && vtkMathUtilities::FuzzyCompare<double>(t1[3], d))
 
 // a simple error observer
 namespace {
@@ -73,6 +81,18 @@ int TestLookupTable(int,char *[])
   TestAssert(table->GetIndex(lo+step) == 1);
   TestAssert(table->GetIndex(hi-step) == 254);
 
+  TestVector4(table->GetMinimumColor(), 0.0, 0.5, 0.0, 1.0);
+  TestVector4(table->GetMaximumColor(), 0.0, 0.0, 0.5, 1.0);
+
+  table->SetUseRangeColors(true);
+  TestAssert(table->GetIndex(lo) == 0);
+  TestAssert(table->GetIndex(hi) == 256);
+  TestAssert(table->GetIndex(lo-tol) == -1);
+  TestAssert(table->GetIndex(hi+tol) == 256);
+  TestAssert(table->GetIndex(lo-step) == -1);
+  TestAssert(table->GetIndex(hi+step) == 257);
+  table->SetUseRangeColors(false);
+
   // log range test
   lo = pow(10.0,lo);
   hi = pow(10.0,hi);
@@ -87,6 +107,15 @@ int TestLookupTable(int,char *[])
   TestAssert(table->GetIndex(hi*step) == 255);
   TestAssert(table->GetIndex(lo*step) == 1);
   TestAssert(table->GetIndex(hi/step) == 254);
+
+  table->SetUseRangeColors(true);
+  TestAssert(table->GetIndex(lo) == 0);
+  TestAssert(table->GetIndex(hi) == 256);
+  TestAssert(table->GetIndex(lo-tol) == -1);
+  TestAssert(table->GetIndex(lo/step) == -1);
+  TestAssert(table->GetIndex(hi+tol) == 256);
+  TestAssert(table->GetIndex(hi*step) == 257);
+  table->SetUseRangeColors(false);
 
   // negative log range
   double tmp = hi;
@@ -103,6 +132,15 @@ int TestLookupTable(int,char *[])
   TestAssert(table->GetIndex(hi*step) == 255);
   TestAssert(table->GetIndex(lo*step) == 1);
   TestAssert(table->GetIndex(hi/step) == 254);
+
+  table->SetUseRangeColors(true);
+  TestAssert(table->GetIndex(lo) == 0);
+  TestAssert(table->GetIndex(hi) == 256);
+  TestAssert(table->GetIndex(lo-tol) == -1);
+  TestAssert(table->GetIndex(lo/step) == -1);
+  TestAssert(table->GetIndex(hi+tol) == 256);
+  TestAssert(table->GetIndex(hi*step) == 257);
+  table->SetUseRangeColors(false);
 
   // == check error reporting ==
 
