@@ -69,6 +69,12 @@ public:
     this->NanSwatch = 0;
     this->NanSwatchMapper = 0;
     this->NanSwatchActor = 0;
+    this->MinimumColorSwatch = 0;
+    this->MinimumColorSwatchMapper = 0;
+    this->MinimumColorSwatchActor = 0;
+    this->MaximumColorSwatch = 0;
+    this->MaximumColorSwatchMapper = 0;
+    this->MaximumColorSwatchActor = 0;
     }
 
   // Define types for smart vectors containing various base classes.
@@ -89,6 +95,10 @@ public:
   float DPI;
   /// The thickness and length of the (square) NaN swatch.
   double NanSwatchSize;
+  /// The thickness and length of the (square) MinimumColor swatch.
+  double MinimumColorSwatchSize;
+  /// The thickness and length of the (square) MaximumColor swatch.
+  double MaximumColorSwatchSize;
   /// Space in pixels between swatches when in indexed lookup mode.
   double SwatchPad;
   /// Number of annotated values (at least lut->GetNumberOfAnnotatedValues(), but maybe more)
@@ -111,6 +121,9 @@ public:
   vtkScalarBarBox ScalarBarBox;
   /// The bounding box of the NaN swatch
   vtkScalarBarBox NanBox;
+  /// The bounding box of the out-of-range color swatch
+  vtkScalarBarBox MinimumColorBox;
+  vtkScalarBarBox MaximumColorBox;
   /// The bounding box of tick mark anchor points (tick labels are not fully contained)
   vtkScalarBarBox TickBox;
   /// The bounding box of the scalar bar title text.
@@ -136,6 +149,12 @@ public:
   vtkPolyData*         NanSwatch;
   vtkPolyDataMapper2D* NanSwatchMapper;
   vtkActor2D*          NanSwatchActor;
+  vtkPolyData*         MinimumColorSwatch;
+  vtkPolyDataMapper2D* MinimumColorSwatchMapper;
+  vtkActor2D*          MinimumColorSwatchActor;
+  vtkPolyData*         MaximumColorSwatch;
+  vtkPolyDataMapper2D* MaximumColorSwatchMapper;
+  vtkActor2D*          MaximumColorSwatchActor;
   //@}
 };
 

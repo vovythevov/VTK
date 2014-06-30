@@ -250,6 +250,16 @@ public:
   vtkGetStringMacro(NanAnnotation);
 
   // Description:
+  // Set/get the annotation text for minimum color values.
+  vtkSetStringMacro(MinimumColorAnnotation);
+  vtkGetStringMacro(MinimumColorAnnotation);
+
+  // Description:
+  // Set/get the annotation text for minimum color values.
+  vtkSetStringMacro(MaximumColorAnnotation);
+  vtkGetStringMacro(MaximumColorAnnotation);
+
+  // Description:
   // Set/get whether annotation labels should be scaled with the viewport.
   //
   // The default value is 0 (no scaling).
@@ -383,6 +393,23 @@ protected:
   virtual void LayoutNanSwatch();
 
   // Description:
+  // Determine the size of the minimum color swatch if it is to be rendered.
+  //
+  // This method must set this->P->MinimumColorSwatchSize and
+  // this->P->MinimumColorBox. It may depend on layout performed by
+  // ComputeScalarBarThickness.
+  virtual void LayoutMinimumColorSwatch();
+
+  // Description:
+  // Determine the size of the maximum color swatch if it is to be rendered.
+  //
+  // This method must set this->P->MaximumColorSwatchSize and
+  // this->P->MaximumColorBox. It may depend on layout performed by
+  // ComputeScalarBarThickness.
+  virtual void LayoutMaximumColorSwatch();
+
+
+  // Description:
   // Set the title actor's input to the latest title (and subtitle) text.
   virtual void PrepareTitleText();
 
@@ -390,11 +417,11 @@ protected:
   // Determine the position and size of the scalar bar title box.
   //
   // This method must set this->P->TitleBox
-  // It may depend on layout performed by LayoutNanSwatch.
-  // If useTickBox is true, it should increase the target area
-  // for the label to touch the tick box. It is called in this
-  // way when the tick labels are small due to constraints other
-  // than the title box.
+  // It may depend on layout performed by LayoutNanSwatch,
+  // layoutMinimumColorSwatch and layoutMaximumColorSwatch. If useTickBox is
+  // true, it should increase the target area for the label to touch the tick
+  // box. It is called in this way when the tick labels are small due to
+  // constraints other than the title box.
   virtual void LayoutTitle();
 
   // Description:
@@ -456,6 +483,20 @@ protected:
   virtual void ConfigureNanSwatch();
 
   // Description:
+  // Generate/configure the minimum color swatch using the laid-out geometry.
+  //
+  // Currently the minimum color swatch is rendered by the same actor as the
+  // scalar bar. This may change in the future.
+  virtual void ConfigureMinimumColorSwatch();
+
+  // Description:
+  // Generate/configure the maximum color swatch using the laid-out geometry.
+  //
+  // Currently the maximum color swatch is rendered by the same actor as the
+  // scalar bar. This may change in the future.
+  virtual void ConfigureMaximumColorSwatch();
+
+  // Description:
   // Subclasses may override this method to alter this->P->Labels, allowing
   // the addition and removal of annotations. The member maps viewport coordinates
   // along the long axis of the scalar bar to text (which may include MathText;
@@ -486,6 +527,17 @@ protected:
     double barX, double barY, double barWidth, double barHeight,
     double delta, double pad);
 
+  // Description:
+  // Return whether the color should be visible
+  bool DrawMinimumColor();
+  bool DrawMaximumColor();
+
+  // Description:
+  // Return the color. No-op if the lookup table is invalid.
+  // RGBA must be valid, no check perfomed
+  void GetMinimumColor(double* rgba);
+  void GetMaximumColor(double* rgba);
+
   /// User-changeable settings
   //@{
   int MaximumNumberOfColors;
@@ -509,6 +561,8 @@ protected:
   double TextureGridWidth;
   int TextPosition;
   char* NanAnnotation;
+  char* MinimumColorAnnotation;
+  char* MaximumColorAnnotation;
   double AnnotationLeaderPadding;
   int MaximumWidthInPixels;
   int MaximumHeightInPixels;

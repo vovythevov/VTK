@@ -18,10 +18,12 @@
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
 #include "vtkColor.h"
+#include "vtkColorTransferFunction.h"
 #include "vtkCoordinate.h"
 #include "vtkFloatArray.h"
 #include "vtkPointData.h"
 #include "vtkImageData.h"
+#include "vtkLookupTable.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPolyData.h"
@@ -125,6 +127,28 @@ vtkScalarBarActor::vtkScalarBarActor()
   this->P->NanSwatchMapper->SetInputData(this->P->NanSwatch);
   this->P->NanSwatchActor->SetMapper(this->P->NanSwatchMapper);
   this->P->NanSwatchActor->GetPositionCoordinate()->
+    SetReferenceCoordinate(this->PositionCoordinate);
+
+  this->MinimumColorAnnotation = 0;
+  this->SetMinimumColorAnnotation("Minimum color");
+  this->P->MinimumColorSwatch = vtkPolyData::New();
+  this->P->MinimumColorSwatchMapper = vtkPolyDataMapper2D::New();
+  this->P->MinimumColorSwatchActor = vtkActor2D::New();
+  this->P->MinimumColorSwatchMapper->SetInputData(this->P->MinimumColorSwatch);
+  this->P->MinimumColorSwatchActor->SetMapper(
+    this->P->MinimumColorSwatchMapper);
+  this->P->MinimumColorSwatchActor->GetPositionCoordinate()->
+    SetReferenceCoordinate(this->PositionCoordinate);
+
+  this->MaximumColorAnnotation = 0;
+  this->SetMaximumColorAnnotation("Maximum color");
+  this->P->MaximumColorSwatch = vtkPolyData::New();
+  this->P->MaximumColorSwatchMapper = vtkPolyDataMapper2D::New();
+  this->P->MaximumColorSwatchActor = vtkActor2D::New();
+  this->P->MaximumColorSwatchMapper->SetInputData(this->P->MaximumColorSwatch);
+  this->P->MaximumColorSwatchActor->SetMapper(
+    this->P->MaximumColorSwatchMapper);
+  this->P->MaximumColorSwatchActor->GetPositionCoordinate()->
     SetReferenceCoordinate(this->PositionCoordinate);
 
   this->AnnotationLeaderPadding = 8.;
@@ -263,6 +287,8 @@ void vtkScalarBarActor::ReleaseGraphicsResources(vtkWindow* win)
     }
   this->ScalarBarActor->ReleaseGraphicsResources(win);
   this->P->NanSwatchActor->ReleaseGraphicsResources(win);
+  this->P->MinimumColorSwatchActor->ReleaseGraphicsResources(win);
+  this->P->MaximumColorSwatchActor->ReleaseGraphicsResources(win);
   this->P->AnnotationBoxesActor->ReleaseGraphicsResources(win);
   this->P->AnnotationLeadersActor->ReleaseGraphicsResources(win);
   this->BackgroundActor->ReleaseGraphicsResources(win);
@@ -301,6 +327,14 @@ vtkScalarBarActor::~vtkScalarBarActor()
   this->P->NanSwatch->Delete();
   this->P->NanSwatchMapper->Delete();
   this->P->NanSwatchActor->Delete();
+
+  this->P->MinimumColorSwatch->Delete();
+  this->P->MinimumColorSwatchMapper->Delete();
+  this->P->MinimumColorSwatchActor->Delete();
+
+  this->P->MaximumColorSwatch->Delete();
+  this->P->MaximumColorSwatchMapper->Delete();
+  this->P->MaximumColorSwatchActor->Delete();
 
   this->P->AnnotationBoxes->Delete();
   this->P->AnnotationBoxesMapper->Delete();
@@ -394,6 +428,17 @@ int vtkScalarBarActor::RenderOverlay(vtkViewport* viewport)
     {
     renderedSomething +=
       this->P->NanSwatchActor->RenderOverlay(viewport);
+    }
+
+  if (this->DrawMinimumColor())
+    {
+    renderedSomething +=
+      this->P->MinimumColorSwatchActor->RenderOverlay(viewport);
+    }
+  if (this->DrawMaximumColor())
+    {
+    renderedSomething +=
+      this->P->MaximumColorSwatchActor->RenderOverlay(viewport);
     }
 
   if (this->DrawFrame)
@@ -532,6 +577,17 @@ int vtkScalarBarActor::RenderOpaqueGeometry(vtkViewport* viewport)
       this->P->NanSwatchActor->RenderOpaqueGeometry(viewport);
     }
 
+  if (this->DrawMinimumColor())
+    {
+    renderedSomething +=
+      this->P->MinimumColorSwatchActor->RenderOpaqueGeometry(viewport);
+    }
+  if (this->DrawMaximumColor())
+    {
+    renderedSomething +=
+      this->P->MaximumColorSwatchActor->RenderOpaqueGeometry(viewport);
+    }
+
   // Draw the annotation leaders and labels
   if ( this->DrawAnnotations )
     {
@@ -644,6 +700,12 @@ void vtkScalarBarActor::PrintSelf(ostream& os, vtkIndent indent)
     << this->DrawNanAnnotation << endl;
   os << indent << "NanAnnotation: "
     << (this->NanAnnotation ? this->NanAnnotation : "(none)") << endl;
+  os << indent << "MinimumColorAnnotation: "
+    << (this->MinimumColorAnnotation ? this->MinimumColorAnnotation : "(none)")
+    << endl;
+  os << indent << "MaximumColorAnnotation: "
+    << (this->MaximumColorAnnotation ? this->MaximumColorAnnotation : "(none)")
+    << endl;
   os << indent << "AnnotationLeaderPadding: "
     << this->AnnotationLeaderPadding << endl;
   os << indent << "AnnotationTextScaling: "
@@ -719,6 +781,8 @@ void vtkScalarBarActor::RebuildLayout(vtkViewport* viewport)
   this->ComputeFrame();
   this->ComputeScalarBarThickness();
   this->LayoutNanSwatch();
+  this->LayoutMinimumColorSwatch();
+  this->LayoutMaximumColorSwatch();
   this->PrepareTitleText();
   this->LayoutTitle();
   this->ComputeScalarBarLength();
@@ -734,6 +798,8 @@ void vtkScalarBarActor::RebuildLayout(vtkViewport* viewport)
   this->ConfigureTitle();
   this->ConfigureTicks();
   this->ConfigureNanSwatch();
+  this->ConfigureMinimumColorSwatch();
+  this->ConfigureMaximumColorSwatch();
 #ifdef VTK_DBG_LAYOUT
   this->DrawBoxes();
 #endif // VTK_DBG_LAYOUT
@@ -879,6 +945,94 @@ void vtkScalarBarActor::LayoutNanSwatch()
   if (this->P->NanBox.Size[1] > 2 * this->TextPad)
     {
     this->P->NanBox.Size[1] -= this->TextPad;
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkScalarBarActor::LayoutMinimumColorSwatch()
+{
+  // We don't have ScalarBarBox.Size[1] set yet; use the frame width instead.
+  this->P->MinimumColorSwatchSize = static_cast<double>(
+    this->P->ScalarBarBox.Size[0] > this->P->Frame.Size[1] / 4 ?
+    this->P->Frame.Size[1] / 4 : this->P->ScalarBarBox.Size[0]);
+  if (this->P->MinimumColorSwatchSize < 4 && this->P->Frame.Size[1] > 16)
+    this->P->MinimumColorSwatchSize = 4;
+
+  if (!this->DrawMinimumColor())
+    this->P->NanSwatchSize = 0;
+
+  if (this->P->NumNotes)
+    {
+    this->P->SwatchPad = this->P->Frame.Size[1] / this->P->NumNotes > 16. ?
+      4. : ( this->P->Frame.Size[1] / this->P->NumNotes / 4. );
+    }
+  else
+    {
+    this->P->SwatchPad = 4.;
+    }
+
+  if (this->Orientation == VTK_ORIENT_VERTICAL)
+    {
+    this->P->MinimumColorBox.Posn[0] = this->P->ScalarBarBox.Posn[0];
+    this->P->MinimumColorBox.Posn[1] = this->P->Frame.Posn[1] + this->TextPad;
+    this->P->ScalarBarBox.Posn[1] +=
+      this->P->MinimumColorSwatchSize + this->P->SwatchPad;
+    }
+  else // HORIZONTAL
+    {
+    this->P->MinimumColorBox.Posn = this->P->ScalarBarBox.Posn;
+    this->P->MinimumColorBox.Posn[this->P->TL[1]] +=
+      this->P->Frame.Size[1] - this->P->MinimumColorSwatchSize;
+    }
+  this->P->MinimumColorBox.Size[0] = this->P->ScalarBarBox.Size[0];
+  this->P->MinimumColorBox.Size[1] = this->P->MinimumColorSwatchSize;
+  if (this->P->MinimumColorBox.Size[1] > 2 * this->TextPad)
+    {
+    this->P->MinimumColorBox.Size[1] -= this->TextPad;
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkScalarBarActor::LayoutMaximumColorSwatch()
+{
+  // We don't have ScalarBarBox.Size[1] set yet; use the frame width instead.
+  this->P->MaximumColorSwatchSize = static_cast<double>(
+    this->P->ScalarBarBox.Size[0] > this->P->Frame.Size[1] / 4 ?
+    this->P->Frame.Size[1] / 4 : this->P->ScalarBarBox.Size[0]);
+  if (this->P->MaximumColorSwatchSize < 4 && this->P->Frame.Size[1] > 16)
+    this->P->MaximumColorSwatchSize = 4;
+
+  if (!this->DrawMaximumColor())
+    this->P->NanSwatchSize = 0;
+
+  if (this->P->NumNotes)
+    {
+    this->P->SwatchPad = this->P->Frame.Size[1] / this->P->NumNotes > 16. ?
+      4. : ( this->P->Frame.Size[1] / this->P->NumNotes / 4. );
+    }
+  else
+    {
+    this->P->SwatchPad = 4.;
+    }
+
+  if (this->Orientation == VTK_ORIENT_VERTICAL)
+    {
+    this->P->MaximumColorBox.Posn[0] = this->P->ScalarBarBox.Posn[0];
+    this->P->MaximumColorBox.Posn[1] = this->P->Frame.Posn[1] + this->TextPad;
+    this->P->ScalarBarBox.Posn[1] +=
+      this->P->MaximumColorSwatchSize + this->P->SwatchPad;
+    }
+  else // HORIZONTAL
+    {
+    this->P->MaximumColorBox.Posn = this->P->ScalarBarBox.Posn;
+    this->P->MaximumColorBox.Posn[this->P->TL[1]] +=
+      this->P->Frame.Size[1] - this->P->MaximumColorSwatchSize;
+    }
+  this->P->MaximumColorBox.Size[0] = this->P->ScalarBarBox.Size[0];
+  this->P->MaximumColorBox.Size[1] = this->P->MaximumColorSwatchSize;
+  if (this->P->MaximumColorBox.Size[1] > 2 * this->TextPad)
+    {
+    this->P->MaximumColorBox.Size[1] -= this->TextPad;
     }
 }
 
@@ -1380,13 +1534,9 @@ void vtkScalarBarActor::ConfigureTicks()
 }
 
 //-----------------------------------------------------------------------------
-void vtkScalarBarActor::ConfigureNanSwatch()
+void ConfigureSwatch(vtkPolyData* swatch, vtkScalarBarBox& box,
+                     double rgba[4], int useOpacity, int TL[2])
 {
-  if (!this->DrawNanAnnotation)
-    {
-    return;
-    }
-
   int numPts = 4;
   vtkPoints* pts = vtkPoints::New();
   pts->SetNumberOfPoints(numPts);
@@ -1396,42 +1546,83 @@ void vtkScalarBarActor::ConfigureNanSwatch()
   colors->SetNumberOfComponents(4); // RGBA
   colors->SetNumberOfTuples(1);
 
-  this->P->NanSwatch->Initialize();
-  this->P->NanSwatch->SetPoints(pts);
-  this->P->NanSwatch->SetPolys(polys);
-  this->P->NanSwatch->GetCellData()->SetScalars(colors);
+  swatch->Initialize();
+  swatch->SetPoints(pts);
+  swatch->SetPolys(polys);
+  swatch->GetCellData()->SetScalars(colors);
   pts->Delete(); polys->Delete(); colors->Delete();
   double x[3];
   x[2] = 0.;
 
   for (int j = 0; j < 2; ++j)
     {
-    x[j] = this->P->NanBox.Posn[j];
+    x[j] = box.Posn[j];
     }
   int i = 0;
   pts->SetPoint(i++, x);
-  x[0] += this->P->NanBox.Size[this->P->TL[0]];
+  x[0] += box.Size[TL[0]];
   pts->SetPoint(i++, x);
-  x[1] += this->P->NanBox.Size[this->P->TL[1]];
+  x[1] += box.Size[TL[1]];
   pts->SetPoint(i++, x);
-  x[0] -= this->P->NanBox.Size[this->P->TL[0]];
+  x[0] -= box.Size[TL[0]];
   pts->SetPoint(i++, x);
 
   // Add the swatch to the polydata and color it:
   unsigned char* rgb;
-  double rgba[4];
   vtkIdType ptIds[4];
   ptIds[0] = 0;
   ptIds[1] = 1;
   ptIds[2] = 2;
   ptIds[3] = 3;
   polys->InsertNextCell(4, ptIds);
-  this->LookupTable->GetIndexedColor(-1,rgba);
+
   rgb = colors->GetPointer(0); //write into array directly
   rgb[0] = rgba[0] * 255.;
   rgb[1] = rgba[1] * 255.;
   rgb[2] = rgba[2] * 255.;
-  rgb[3] = this->UseOpacity ? rgba[3] * 255. : 255;
+  rgb[3] = useOpacity ? rgba[3] * 255. : 255;
+}
+
+//-----------------------------------------------------------------------------
+void vtkScalarBarActor::ConfigureNanSwatch()
+{
+  if (!this->DrawNanAnnotation)
+    {
+    return;
+    }
+
+  double rgba[4];
+  this->LookupTable->GetColor(vtkMath::Nan(), rgba);
+  ConfigureSwatch(this->P->NanSwatch, this->P->NanBox, rgba,
+    this->UseOpacity, this->P->TL);
+}
+
+//-----------------------------------------------------------------------------
+void vtkScalarBarActor::ConfigureMinimumColorSwatch()
+{
+  if (!this->DrawMinimumColor())
+    {
+    return;
+    }
+
+  double rgba[4];
+  this->GetMinimumColor(rgba);
+  ConfigureSwatch(this->P->MinimumColorSwatch, this->P->MinimumColorBox,
+    rgba, this->UseOpacity, this->P->TL);
+}
+
+//-----------------------------------------------------------------------------
+void vtkScalarBarActor::ConfigureMaximumColorSwatch()
+{
+  if (!this->DrawMaximumColor())
+    {
+    return;
+    }
+
+  double rgba[4];
+  this->GetMaximumColor(rgba);
+  ConfigureSwatch(this->P->MaximumColorSwatch, this->P->MaximumColorBox,
+    rgba, this->UseOpacity, this->P->TL);
 }
 
 //----------------------------------------------------------------------------
@@ -1736,7 +1927,7 @@ int vtkScalarBarActor::MapAnnotationLabels(
       }
     }
 
-  // II. Optionally add a NaN label.
+  // II. Optionally add a NaN, MinimumColor or MaximumColor label.
   if (
     this->DrawNanAnnotation &&
     this->NanAnnotation &&
@@ -1753,6 +1944,40 @@ int vtkScalarBarActor::MapAnnotationLabels(
     double x =
       this->P->NanBox.Posn[this->P->TL[1]] + this->P->NanBox.Size[1] / 2.;
     this->P->Labels[x] = this->NanAnnotation;
+    this->P->LabelColors[x] = intCol;
+    }
+
+  if (this->DrawMinimumColor() &&
+    this->MinimumColorAnnotation &&
+    this->MinimumColorAnnotation[0] != '\0')
+    {
+    this->GetMinimumColor(fltCol.GetData());
+    vtkColor3ub intCol;
+    for (int j = 0; j <3; ++j)
+      {
+      intCol.GetData()[j] =
+        static_cast<unsigned char>(fltCol.GetData()[j] * 255.);
+      }
+    double x = this->P->MinimumColorBox.Posn[this->P->TL[1]]
+      + this->P->MinimumColorBox.Size[1] / 2.;
+    this->P->Labels[x] = this->MinimumColorAnnotation;
+    this->P->LabelColors[x] = intCol;
+    }
+
+  if (this->DrawMaximumColor() &&
+    this->MaximumColorAnnotation &&
+    this->MaximumColorAnnotation[0] != '\0')
+    {
+    this->GetMaximumColor(fltCol.GetData());
+    vtkColor3ub intCol;
+    for (int j = 0; j <3; ++j)
+      {
+      intCol.GetData()[j] =
+        static_cast<unsigned char>(fltCol.GetData()[j] * 255.);
+      }
+    double x = this->P->MaximumColorBox.Posn[this->P->TL[1]]
+      + this->P->MaximumColorBox.Size[1] / 2.;
+    this->P->Labels[x] = this->MaximumColorAnnotation;
     this->P->LabelColors[x] = intCol;
     }
 
@@ -2211,4 +2436,70 @@ int vtkScalarBarActor::PlaceAnnotationsHorizontally(
   llines->Delete();
   llcolors->Delete();
   return numNotes;
+}
+
+//----------------------------------------------------------------------------
+bool vtkScalarBarActor::DrawMinimumColor()
+{
+  vtkLookupTable* lookup = vtkLookupTable::SafeDownCast(this->LookupTable);
+  if(lookup && lookup->GetUseMinimumColor())
+    {
+    return true;
+    }
+  vtkColorTransferFunction* function =
+    vtkColorTransferFunction::SafeDownCast(this->LookupTable);
+  if (function && function->GetUseMinimumColor())
+    {
+    return true;
+    }
+  return false;
+}
+
+//----------------------------------------------------------------------------
+bool vtkScalarBarActor::DrawMaximumColor()
+{
+  vtkLookupTable* lookup = vtkLookupTable::SafeDownCast(this->LookupTable);
+  if(lookup && lookup->GetUseMaximumColor())
+    {
+    return true;
+    }
+  vtkColorTransferFunction* function =
+    vtkColorTransferFunction::SafeDownCast(this->LookupTable);
+  if (function && function->GetUseMaximumColor())
+    {
+    return true;
+    }
+  return false;
+}
+
+//----------------------------------------------------------------------------
+void vtkScalarBarActor::GetMinimumColor(double* rgba)
+{
+  vtkLookupTable* lookup = vtkLookupTable::SafeDownCast(this->LookupTable);
+  if(lookup)
+    {
+    lookup->GetMinimumColor(rgba);
+    }
+  vtkColorTransferFunction* function =
+    vtkColorTransferFunction::SafeDownCast(this->LookupTable);
+  if (function && function->GetUseMinimumColor())
+    {
+    function->GetMinimumColor(rgba);
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkScalarBarActor::GetMaximumColor(double* rgba)
+{
+  vtkLookupTable* lookup = vtkLookupTable::SafeDownCast(this->LookupTable);
+  if(lookup)
+    {
+    lookup->GetMaximumColor(rgba);
+    }
+  vtkColorTransferFunction* function =
+    vtkColorTransferFunction::SafeDownCast(this->LookupTable);
+  if (function)
+    {
+    function->GetMaximumColor(rgba);
+    }
 }
