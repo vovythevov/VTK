@@ -34,6 +34,8 @@ vtkAbstractPicker::vtkAbstractPicker()
 
   this->PickFromList = 0;
   this->PickList = vtkPropCollection::New();
+
+  this->Enabled = 1;
 }
 
 vtkAbstractPicker::~vtkAbstractPicker()
@@ -98,4 +100,6 @@ void vtkAbstractPicker::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Pick Position: (" <<  this->PickPosition[0] << ","
      << this->PickPosition[1] << ","
      << this->PickPosition[2] << ")\n";
+
+  os << indent << "Enabled: " << this->Enabled << "\n";
 }

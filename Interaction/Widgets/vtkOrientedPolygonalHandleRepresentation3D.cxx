@@ -42,6 +42,18 @@ vtkOrientedPolygonalHandleRepresentation3D
 }
 
 //----------------------------------------------------------------------
+void vtkOrientedPolygonalHandleRepresentation3D::EnablePicking()
+{
+  this->HandlePicker->SetEnabled(1);
+}
+
+//----------------------------------------------------------------------
+void vtkOrientedPolygonalHandleRepresentation3D::DisablePicking()
+{
+  this->HandlePicker->SetEnabled(0);
+}
+
+//----------------------------------------------------------------------
 void vtkOrientedPolygonalHandleRepresentation3D::UpdateHandle()
 {
   this->Superclass::UpdateHandle();

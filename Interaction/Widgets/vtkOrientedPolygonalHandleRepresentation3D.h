@@ -46,6 +46,12 @@ public:
                        vtkAbstractPolygonalHandleRepresentation3D);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  // Description:
+  // Implement the virtual functions to manage internal pickers
+  // WIP: http://na-mic.org/Bug/view.php?id=3808
+  virtual void EnablePicking();
+  virtual void DisablePicking();
+
 protected:
   vtkOrientedPolygonalHandleRepresentation3D();
   ~vtkOrientedPolygonalHandleRepresentation3D();

@@ -73,6 +73,7 @@ vtkAbstractPolygonalHandleRepresentation3D
 
   // Manage the picking stuff
   this->HandlePicker = vtkCellPicker::New();
+  vtkDebugMacro("making picker " << this->HandlePicker << " in vtkAbstractPolygonalHandleRepresentation3D");
   this->HandlePicker->PickFromListOn();
   this->HandlePicker->SetTolerance(0.01); //need some fluff
 
@@ -123,6 +124,24 @@ void vtkAbstractPolygonalHandleRepresentation3D::RegisterPickers()
 {
   this->Renderer->GetRenderWindow()->GetInteractor()->GetPickingManager()
     ->AddPicker(this->HandlePicker, this);
+}
+
+//----------------------------------------------------------------------------
+void vtkAbstractPolygonalHandleRepresentation3D::UnRegisterPickers()
+{
+    if (this->Renderer &&
+        this->Renderer->GetRenderWindow() &&
+        this->Renderer->GetRenderWindow()->GetInteractor())
+      {
+      vtkPickingManager* pm = this->Renderer->GetRenderWindow()
+        ->GetInteractor()->GetPickingManager();
+      if (!pm)
+        {
+        return;
+        }
+
+      pm->RemovePicker(this->HandlePicker);
+      }
 }
 
 //----------------------------------------------------------------------

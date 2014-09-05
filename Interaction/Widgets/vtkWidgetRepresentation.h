@@ -168,6 +168,18 @@ public:
   virtual int RenderVolumetricGeometry(vtkViewport *vtkNotUsed(viewport)) {return 0;}
   virtual int HasTranslucentPolygonalGeometry() { return 0; }
 
+
+  // WIP: related to http://na-mic.org/Bug/view.php?id=3808
+  // Since every widget manages it's own internal pickers, they
+  // need to explicitly enable/disable them so they won't
+  // interfere with the vtkPickingManager's work
+  virtual void EnablePicking() {
+    vtkErrorMacro("Subclass should allow enable/disable picking");
+  }
+  virtual void DisablePicking() {
+    vtkErrorMacro("Subclass should allow enable/disable picking");
+  }
+
 protected:
   vtkWidgetRepresentation();
   ~vtkWidgetRepresentation();
