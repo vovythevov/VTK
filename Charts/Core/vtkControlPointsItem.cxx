@@ -1023,15 +1023,16 @@ bool vtkControlPointsItem::MouseButtonPressEvent(const vtkContextMouseEvent &mou
       this->SetCurrentPoint(pointUnderMouse);
       return true;
       }
-    else if (pointUnderMouse == -1
-             && this->GetNumberOfSelectedPoints() <= 1
-             && !this->StrokeMode)
-      {
-      this->ClampValidPos(pos);
-      vtkIdType addedPoint = this->AddPoint(pos);
-      this->SetCurrentPoint(addedPoint);
-      return true;
-      }
+    // HACK: Prevent the creation of buttons when clicking other places.
+    //else if (pointUnderMouse == -1
+    //         && this->GetNumberOfSelectedPoints() <= 1
+    //         && !this->StrokeMode)
+    //  {
+    //  this->ClampValidPos(pos);
+    //  vtkIdType addedPoint = this->AddPoint(pos);
+    //  this->SetCurrentPoint(addedPoint);
+    //  return true;
+    //  }
     else
       {
       this->SetCurrentPoint(-1);
@@ -1048,14 +1049,15 @@ bool vtkControlPointsItem::MouseButtonPressEvent(const vtkContextMouseEvent &mou
     return true;
     }
 
-  if (mouse.GetButton() == vtkContextMouseEvent::MIDDLE_BUTTON
-      && pointUnderMouse != -1)
-    {
-    this->PointToDelete = pointUnderMouse;
-    this->PointAboutToBeDeleted = true;
-    this->GetScene()->SetDirty(true);
-    return true;
-    }
+  // HACK: Prevent point from being deleted by the middle button
+  //if (mouse.GetButton() == vtkContextMouseEvent::MIDDLE_BUTTON
+  //    && pointUnderMouse != -1)
+  //  {
+  //  this->PointToDelete = pointUnderMouse;
+  //  this->PointAboutToBeDeleted = true;
+  //  this->GetScene()->SetDirty(true);
+  //  return true;
+  //  }
 
   return false;
 }
@@ -1777,16 +1779,17 @@ bool vtkControlPointsItem::KeyPressEvent(const vtkContextKeyEvent &key)
 //-----------------------------------------------------------------------------
 bool vtkControlPointsItem::KeyReleaseEvent(const vtkContextKeyEvent &key)
 {
-  if (key.GetInteractor()->GetKeySym() == std::string("Delete") ||
-      key.GetInteractor()->GetKeySym() == std::string("BackSpace"))
-    {
-    vtkIdType removedPoint = this->RemovePoint(this->GetCurrentPoint());
-    if (key.GetInteractor()->GetKeySym() == std::string("BackSpace"))
-      {
-      this->SetCurrentPoint(removedPoint > 0 ? removedPoint - 1 : 0);
-      }
-    return true;
-    }
+  // HACK: Prevent the user from deleting any point
+  //if (key.GetInteractor()->GetKeySym() == std::string("Delete") ||
+  //    key.GetInteractor()->GetKeySym() == std::string("BackSpace"))
+  //  {
+  //  vtkIdType removedPoint = this->RemovePoint(this->GetCurrentPoint());
+  //  if (key.GetInteractor()->GetKeySym() == std::string("BackSpace"))
+  //    {
+  //    this->SetCurrentPoint(removedPoint > 0 ? removedPoint - 1 : 0);
+  //    }
+  //  return true;
+  //  }
   return this->Superclass::KeyPressEvent(key);
 }
 
